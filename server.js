@@ -4,6 +4,7 @@ import { dirname, join } from 'path';
 import helmet from 'helmet'
 import { initDatabase } from './config/database-init.js';
 import dreamsRouter from './routes/dreams.js';
+import { pool } from './config/database.js'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -20,6 +21,24 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(express.json());
 app.use(express.static(join(__dirname, 'public')));
+
+app.use('/health', async (req, res)=>{
+  try{
+    await pool.query('SELECT 1')
+    res.json({
+      status: "OK",
+      database: "connected",
+      uptime: process.uptime()
+    })
+  }catch(error){
+    res.status(503).json({
+      status: "Error",
+      database: "disconnected",
+      error: error,
+      uptime: process.uptime()
+    })
+  }
+})
 
 // API Routes
 app.use('/api/dreams', dreamsRouter);
